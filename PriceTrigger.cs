@@ -34,6 +34,7 @@ namespace PriceCheckWebAPI
                 ? (ActionResult)new OkObjectResult(result)
                 : new UnauthorizedResult();
         }
+
         /// <summary>
         /// This method is running for get the SHA256
         /// </summary>
@@ -42,13 +43,20 @@ namespace PriceCheckWebAPI
         /// <returns>sha256</returns>
         static string ComputeHMACSHA256(string message, string key)
         {
-            System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
-            byte[] keyByte = encoding.GetBytes(key);
-            HMACSHA256 hmacsha256 = new HMACSHA256(keyByte);
-            byte[] messageBytes = encoding.GetBytes(message);
-            byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
-            string sha256 = ByteToString(hashmessage);
-            return sha256;
+            string sha256 = null;
+            if (!String.IsNullOrEmpty(message) && !String.IsNullOrEmpty(key))
+            {
+                System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+                byte[] keyByte = encoding.GetBytes(key);
+                HMACSHA256 hmacsha256 = new HMACSHA256(keyByte);
+                byte[] messageBytes = encoding.GetBytes(message);
+                byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
+                sha256 = ByteToString(hashmessage);
+                return sha256;
+            }
+            return sha256 = "";
+                      
+            
         }
         public static bool AuthorizeKey(string verifyCode)
         {
@@ -145,10 +153,11 @@ namespace PriceCheckWebAPI
                         JObject jchild = (JObject)jitem;
                         string value = jchild.First.ToString();
                         value = value.Substring(9);
-                        string tmp = value + ":" + jchild + ",";
+                        string tmp = value + ":" + jchild + ",";                        
                         result += tmp;
 
                     }
+                    result = result.Substring(0, result.Length - 1);
                 }
             }
 
