@@ -53,7 +53,7 @@ namespace PriceCheckWebAPI
             newJson.Add("A50", jobjResult["A50"]);
             newJson.Add("XAUUSD", jobjResult["XAUUSD"]);
             newJson.Add("XAGUSD", jobjResult["XAGUSD"]);
-            newJson.Add("USOIL", jobjResult["USOIL"]);
+            newJson.Add("USOil", jobjResult["USOil"]);
             newJson.Add("TSLA", jobjResult["TSLA"]);
             newJson.Add("AMZN", jobjResult["AMZN"]);
             newJson.Add("AAPL", jobjResult["AAPL"]);
