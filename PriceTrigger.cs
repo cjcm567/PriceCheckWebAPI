@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -29,12 +31,41 @@ namespace PriceCheckWebAPI
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             string verifyCode = data.verifyCode;
-            string result = GetValueFromMT.GetValue();
+            dynamic result = GetNewJson(GetValueFromMT.GetValue());
             return AuthorizeKey(verifyCode) != false
                 ? (ActionResult)new OkObjectResult(result)
                 : new UnauthorizedResult();
         }
-
+        public static dynamic GetNewJson(string result)
+        {
+            var newJson = new JObject();
+            JObject jobjResult = JObject.Parse(result);
+            string jstring = "";
+            newJson.Add("EURUSD", jobjResult["EURUSD"]);
+            newJson.Add("USDJPY", jobjResult["USDJPY"]);
+            newJson.Add("GBPUSD", jobjResult["GBPUSD"]);
+            newJson.Add("EURJPY", jobjResult["EURJPY"]);
+            newJson.Add("AUDUSD", jobjResult["AUDUSD"]);
+            newJson.Add("SPX500", jobjResult["SPX500"]);
+            newJson.Add("US30", jobjResult["US30"]);
+            newJson.Add("HKG33", jobjResult["HKG33"]);
+            newJson.Add("NAS100", jobjResult["NAS100"]);
+            newJson.Add("A50", jobjResult["A50"]);
+            newJson.Add("XAUUSD", jobjResult["XAUUSD"]);
+            newJson.Add("XAGUSD", jobjResult["XAGUSD"]);
+            newJson.Add("USOIL", jobjResult["USOIL"]);
+            newJson.Add("TSLA", jobjResult["TSLA"]);
+            newJson.Add("AMZN", jobjResult["AMZN"]);
+            newJson.Add("AAPL", jobjResult["AAPL"]);
+            newJson.Add("BA", jobjResult["BA"]);
+            newJson.Add("MSFT", jobjResult["MSFT"]);
+            jstring = newJson.ToString();
+            jstring = jstring.Replace("bid","Bid");
+            jstring = jstring.Replace("ask","Ask");
+            jstring = jstring.Replace("tickTime","Last");
+            newJson = JObject.Parse(jstring);
+            return newJson;
+        }
         /// <summary>
         /// This method is running for get the SHA256
         /// </summary>
@@ -84,9 +115,48 @@ namespace PriceCheckWebAPI
     {
         public static dynamic GetValue()
         {
-            string sXml = GetWebContext();
-            string json = GetJson(sXml);
+            string content = "";
+            dynamic json = "";
+            content = getCjcApiValueAsync().ToString();
+            if (String.IsNullOrEmpty(content))
+            {
+                content = GetWebContext();
+                json = GetJson(content);
+            } else
+            {
+                json = content;
+            }            
             return json;
+        }
+        public static dynamic getCjcApiValueAsync()
+        {
+            string cjcApi = PriceTrigger.GetEnvironmentVariable("CJCAPI");
+            var result = "";
+            // Create a request for the URL.   
+            WebRequest request = WebRequest.Create(cjcApi);
+            // Get the response.  
+            WebResponse response = request.GetResponse();
+            // Display the status.  
+            Console.WriteLine(((HttpWebResponse)response).StatusDescription);
+            // Get the stream containing content returned by the server. 
+            // The using block ensures the stream is automatically closed. 
+            using (Stream dataStream = response.GetResponseStream())
+            {
+                // Open the stream using a StreamReader for easy access.  
+                StreamReader reader = new StreamReader(dataStream);
+                // Read the content.  
+                string responseFromServer = reader.ReadToEnd();
+                if (responseFromServer != "")
+                {
+                    result = GetJson(responseFromServer);
+                }
+            }
+            // Close the response.  
+            response.Close();
+
+
+
+            return result;
         }
         /// <summary>
         /// This function is running for getting the price from Fxcm.
@@ -98,15 +168,25 @@ namespace PriceCheckWebAPI
             try
             {
                 WebClient MyWebClient = new WebClient();
-                Byte[] pageData = MyWebClient.DownloadData("https://rates.fxcm.com/RatesXML2");
+                Byte[] pageData = null;
+                
+                string fxApi = PriceTrigger.GetEnvironmentVariable("FXAPI");
+                pageData = MyWebClient.DownloadData(fxApi);
                 pageContext = Encoding.Default.GetString(pageData);
-
+                pageContext = ConvertJson(pageContext);
             }
             catch (Exception ex)
             {
                 pageContext = ex.Message.ToString();
             }
             return pageContext;
+        }
+        public static string ConvertJson(string webContext)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(webContext);
+            var jObject = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
+            return jObject;
         }
         /// <summary>
         /// This function is running for convert the XML to JSON
@@ -115,10 +195,7 @@ namespace PriceCheckWebAPI
         /// <returns>string JSON</returns>
         public static string GetJson(string webContext)
         {
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(webContext);
-            var jObject = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
-            JObject jobj = JObject.Parse(jObject);
+            JObject jobj = JObject.Parse(webContext);
             string json = Fun(jobj);
             if (!String.IsNullOrEmpty(json)) json = "{" + json + "}";
             return json;

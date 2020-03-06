@@ -1,9 +1,11 @@
 {
-    "IsEncrypted": false,
-    "Values": {
-        "AzureWebJobsStorage": "",
-        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-        "Key": "0lAnM8Hzm",
-        "Message": "CJCP@ssw0rd9876%$"
-    }
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "Key": "0lAnM8Hzm",
+    "Message": "CJCP@ssw0rd9876%$",
+    "CJCAPI": "http://18.163.153.93/cjcapi/api/rate",
+    "FXAPI": "https://rates.fxcm.com/RatesXML2"
+  }
 }
